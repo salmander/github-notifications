@@ -1,0 +1,10 @@
+version: '3'
+services:
+    queue:
+        image: rabbitmq:management-alpine
+        ports:
+            - "5672:5672" # AMQP
+            - "15672:15672" # HTTP
+        environment:
+            - RABBITMQ_DEFAULT_USER=guest
+            - RABBITMQ_DEFAULT_PASS=guest

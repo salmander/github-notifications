@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	url := common.GetURL()
-	conn, err := amqp.Dial(url)
+	config := common.ReadFromConfig("config.yaml")
+	conn, err := amqp.Dial(config.GetURL())
 	common.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -18,12 +18,12 @@ func main() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		common.QUEUE_NAME, // name
-		false,             // durable
-		false,             // delete when unused
-		false,             // exclusive
-		false,             // no-wait
-		nil,               // arguments
+		config.QueueName, // name
+		false,            // durable
+		false,            // delete when unused
+		false,            // exclusive
+		false,            // no-wait
+		nil,              // arguments
 	)
 	common.FailOnError(err, "Failed to declare a queue")
 

@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"encoding/json"
+	"io/ioutil"
+
 	"github.com/salmander/github-notifications/common"
 	"github.com/streadway/amqp"
 )
@@ -15,14 +18,13 @@ var ch *amqp.Channel
 var q amqp.Queue
 
 type webhook struct {
-	Header webhookHeader
-	Body   struct{}
+	Header webhookHeader `json:"Header"`
+	Body   string        `json:"Body"`
 }
 
 type webhookHeader struct {
-	Event     string
-	Delivery  string
-	Signature string
+	Event    string `json:"GitHubEvent"`
+	Delivery string `json:"GitHubDelivery"`
 }
 
 func main() {
@@ -45,18 +47,42 @@ func main() {
 }
 
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Request received: param 1: %s!", r.URL.Path[1:])
+	endpoint := r.URL.Path[1:]
+	var message string = endpoint
+	log.Printf("Request received for endpoint: %s!", endpoint)
 
-	// Get the request body
+	// Check if the endpoint is 'payload'
+	if endpoint == "payload" {
+		log.Println("Endpoint == payload")
+		response := webhook{}
+
+		// Get the request body
+		bodyBuffer, err := ioutil.ReadAll(r.Body)
+		common.FailOnError(err, "Error reading request body")
+		response.Body = fmt.Sprintf("%s", bodyBuffer)
+
+		// Read the headers
+		response.Header.Delivery = r.Header.Get("X-GitHub-Delivery	")
+		response.Header.Event = r.Header.Get("X-GitHub-Event")
+
+		message = convertToJsonBody(response)
+	}
 
 	// Publish message to the queue
-	message := r.URL.Path[1:]
 	if publishMessage(message) {
-		fmt.Fprintf(w, "[X] Message sent: %v", message)
+		fmt.Fprint(w, "[X] Message sent")
 	} else {
 		fmt.Fprint(w, "[Error] Something went wrong in sending the message")
 	}
 
+}
+
+func convertToJsonBody(resp webhook) string {
+	str, err := json.MarshalIndent(resp, "", "	")
+
+	common.FailOnError(err, "Error converting struct to JSON response")
+
+	return string(str)
 }
 
 // Configure and setup queue

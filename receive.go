@@ -4,12 +4,13 @@ import (
 	"log"
 
 	"github.com/salmander/github-notifications/common"
+	"github.com/salmander/github-notifications/config"
 	"github.com/streadway/amqp"
 )
 
 func main() {
-	config := common.ReadFromConfig("config.yaml")
-	conn, err := amqp.Dial(config.GetURL())
+	c := config.ReadFromConfig("config.yaml")
+	conn, err := amqp.Dial(c.GetURL())
 	common.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -17,15 +18,7 @@ func main() {
 	common.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare(
-		config.QueueName, // name
-		false,            // durable
-		false,            // delete when unused
-		false,            // exclusive
-		false,            // no-wait
-		nil,              // arguments
-	)
-	common.FailOnError(err, "Failed to declare a queue")
+	q := common.GetQueue(ch, c)
 
 	msgs, err := ch.Consume(
 		q.Name, // queue

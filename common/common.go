@@ -1,21 +1,11 @@
 package common
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 
-	"gopkg.in/yaml.v2"
+	"github.com/salmander/github-notifications/config"
+	"github.com/streadway/amqp"
 )
-
-type Config struct {
-	Username  string `yaml:"username"`
-	Password  string `yaml:"password"`
-	Port      string `yaml:"port"`
-	Host      string `yaml:"host"`
-	QueueName string `yaml:"queue_name"`
-}
 
 func FailOnError(err error, msg string) {
 	if err != nil {
@@ -23,28 +13,16 @@ func FailOnError(err error, msg string) {
 	}
 }
 
-// ReadFromConfig takes the path of a YAML config file and returns a Config struct
-func ReadFromConfig(path string) Config {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
+func GetQueue(ch *amqp.Channel, c config.Config) amqp.Queue {
+	q, err := ch.QueueDeclare(
+		c.Queue.Name,             // name
+		c.Queue.Durable,          // durable
+		c.Queue.DeleteWhenUnused, // delete when unused
+		c.Queue.Exclusive,        // exclusive
+		c.Queue.NoWait,           // no-wait
+		nil,                      // arguments
+	)
 
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-
-	c := Config{}
-
-	err = yaml.Unmarshal([]byte(data), &c)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-
-	return c
-}
-
-func (c Config) GetURL() string {
-	return fmt.Sprintf("amqp://%v:%v@%v:%v/", c.Username, c.Password, c.Host, c.Port)
+	FailOnError(err, "Failed to declare a queue")
+	return q
 }

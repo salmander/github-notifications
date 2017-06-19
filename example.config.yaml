@@ -2,4 +2,10 @@ username: guest
 password: guest
 host: localhost
 port: 5672
-queue_name: test-queue
+queue:
+    name: test-queue
+    vhost:
+    durable: true # durable
+    delete_when_unused: true # delete when unused
+    exclusive: false # exclusive
+    no_wait: false # no-wait

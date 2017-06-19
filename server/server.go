@@ -9,10 +9,11 @@ import (
 	"io/ioutil"
 
 	"github.com/salmander/github-notifications/common"
+	"github.com/salmander/github-notifications/config"
 	"github.com/streadway/amqp"
 )
 
-var config common.Config
+var c config.Config
 var conn *amqp.Connection
 var ch *amqp.Channel
 var q amqp.Queue
@@ -28,7 +29,8 @@ type webhookHeader struct {
 }
 
 func main() {
-	config = common.ReadFromConfig("config.yaml")
+	c = config.ReadFromConfig("config.yaml")
+	log.Println("URL", c.GetURL())
 
 	// Setup URL handler
 	http.HandleFunc("/", webhookHandler)
@@ -92,15 +94,7 @@ func setupChannelAndQueue() amqp.Queue {
 	ch, err = conn.Channel()
 	common.FailOnError(err, "Failed to open a channel")
 
-	q, err := ch.QueueDeclare(
-		config.QueueName, // name
-		false,            // durable
-		false,            // delete when unused
-		false,            // exclusive
-		false,            // no-wait
-		nil,              // arguments
-	)
-	common.FailOnError(err, "Failed to declare a queue")
+	q := common.GetQueue(ch, c)
 	log.Println("Connected to the exchange")
 	return q
 }
@@ -110,7 +104,7 @@ func setupQueue() *amqp.Connection {
 	var err error
 
 	// Dial to connect
-	conn, err = amqp.Dial(config.GetURL())
+	conn, err = amqp.Dial(c.GetURL())
 	common.FailOnError(err, "Failed to connect to RabbitMQ")
 	log.Print("Connected to the RabbitMQ server")
 	return conn

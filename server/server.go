@@ -30,7 +30,6 @@ type webhookHeader struct {
 
 func main() {
 	c = config.ReadFromConfig("config.yaml")
-	log.Println("URL", c.GetURL())
 
 	// Setup URL handler
 	http.HandleFunc("/", webhookHandler)
@@ -44,8 +43,9 @@ func main() {
 	defer ch.Close() // Close the channel at the end
 
 	// Start HTTP server
-	log.Println("Listening on port 8080")
-	http.ListenAndServe(":8080", nil)
+	log.Println("Listening on port", c.Http.Port)
+	err := http.ListenAndServe(":"+c.Http.Port, nil)
+	common.FailOnError(err, "Error listening on port "+c.Http.Port)
 }
 
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 		response.Body = fmt.Sprintf("%s", bodyBuffer)
 
 		// Read the headers
-		response.Header.Delivery = r.Header.Get("X-GitHub-Delivery	")
+		response.Header.Delivery = r.Header.Get("X-GitHub-Delivery")
 		response.Header.Event = r.Header.Get("X-GitHub-Event")
 
 		message = convertToJsonBody(response)

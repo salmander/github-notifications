@@ -11,11 +11,16 @@ import (
 )
 
 type Config struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Port     string `yaml:"port"`
-	Host     string `yaml:"host"`
-	Queue    struct {
+	Http struct {
+		Port string `yaml:"port"`
+	} `yaml:"http"`
+	Broker struct {
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+		Port     string `yaml:"port"`
+		Host     string `yaml:"host"`
+	} `yaml:"broker"`
+	Queue struct {
 		Name             string `yaml:"name"`
 		Vhost            string `yaml:"vhost"`
 		Durable          bool   `yaml:"durable"`
@@ -48,9 +53,9 @@ func ReadFromConfig(path string) Config {
 }
 
 func (c Config) GetURL() string {
-	url := fmt.Sprintf("amqp://%s:%v@%s/%s", c.Username, c.Password, c.Host, c.Queue.Vhost)
-	if c.Port != "" {
-		url = fmt.Sprintf("amqp://%s:%v@%s/%s/:%s", c.Username, c.Password, c.Host, c.Queue.Vhost, c.Port)
+	url := fmt.Sprintf("amqp://%s:%v@%s/%s", c.Broker.Username, c.Broker.Password, c.Broker.Host, c.Queue.Vhost)
+	if c.Broker.Port != "" {
+		url = fmt.Sprintf("amqp://%s:%v@%s/%s/:%s", c.Broker.Username, c.Broker.Password, c.Broker.Host, c.Queue.Vhost, c.Broker.Port)
 	}
 	return url
 }

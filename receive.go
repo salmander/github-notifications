@@ -12,11 +12,13 @@ func main() {
 	c := config.ReadFromConfig("config.yaml")
 	conn, err := amqp.Dial(c.GetURL())
 	common.FailOnError(err, "Failed to connect to RabbitMQ")
+	log.Println("Connected to the AMQP broker")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	common.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
+	log.Println("Connection to the channel successful")
 
 	q := common.GetQueue(ch, c)
 
@@ -30,6 +32,7 @@ func main() {
 		nil,    // args
 	)
 	common.FailOnError(err, "Failed to register a consumer")
+	log.Println("Consumer registered successfully")
 
 	forever := make(chan bool)
 

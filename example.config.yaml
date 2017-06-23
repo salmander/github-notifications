@@ -1,9 +1,12 @@
 ---
 
-username: guest
-password: guest
-host: localhost
-port: 5672
+http:
+    port: 8080
+broker:
+    username: guest
+    password: guest
+    host: localhost
+    port: 5672
 queue:
     name: test-queue
     vhost:
